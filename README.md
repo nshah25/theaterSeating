@@ -15,4 +15,4 @@
   - The theater is 10x20
   - The seats are labeled A - J, reading from left to right
   - Seating indexing starts at A and is assigned from left to right
-  - Viewers want the seats furthest from the screen first and want to sit sequentially 
+  - Viewers want the seats closest to the screen first and want to sit sequentially 
