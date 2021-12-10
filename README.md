@@ -10,3 +10,9 @@
    
 # **Output**
   The program will automatically create a output file called "output.txt" and place it in the src directory after running.
+
+# **Assumptions**
+  - The theater is 10x20
+  - The seats are labeled A - J, reading from left to right
+  - Seating indexing starts at A and is assigned from left to right
+  - Viewers want the seats furthest from the screen first and want to sit sequentially 
