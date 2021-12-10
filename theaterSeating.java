@@ -1,0 +1,126 @@
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+public class theaterSeating implements theaterSeatingInterface
+{
+
+	private ConcurrentHashMap<Character, ArrayList<Integer>> theaterLayout = new ConcurrentHashMap<Character, ArrayList<Integer>>();
+	private HashMap<String, Integer> reservationIdentifersList = new HashMap<String, Integer>();
+	private LinkedHashMap<String, ArrayList<String>> reservationDetails = new LinkedHashMap<String, ArrayList<String>>();
+	private HashSet<String> noReservation = new HashSet<String>();
+	private int numSeatsInRow = 20;
+	private int numRows = 10;
+	private int numSeatsAvailable = numSeatsInRow * numRows;
+
+	public theaterSeating(ConcurrentHashMap<Character, ArrayList<Integer>> populateTheaterMap)
+	{
+		theaterLayout = populateTheaterMap;
+	}
+
+	@Override
+	public String parseInputFile(String s) throws seatAllocationError {
+		String split[] = s.split(" ");
+		return validateRequest(split);
+	}
+
+	/*
+	 * Validate input request for reservation.
+	 */
+	private String validateRequest(String split[]) throws seatAllocationError {
+		String name = "";
+		int numSeats = 0;
+		if (split.length == 2) {
+			name = split[0];
+			numSeats = Integer.parseInt(split[1]);
+			reservationIdentifersList.put(name, numSeats);
+			return searchForBestSeats(numSeats, name);
+		}
+		if (split.length > 2 || split.length < 2) {
+			throw new seatAllocationError("Parameters incorrect");
+		}
+		if (numSeats <= 0) {
+			throw new seatAllocationError("Number of seat requested is 0 or less");
+		}
+
+		if (name == null || name.isEmpty()) {
+			throw new seatAllocationError("Name is empty");
+		}
+		return "";
+	}
+
+	/*
+	 * Search for seats, assign the tightest/closest fitting row to the
+	 * corresponding reservation identifier
+	 */
+	private String searchForBestSeats(int numSeats, String name) {
+		String result = "";
+		if (numSeats > numSeatsAvailable || numSeats > numSeatsInRow) {
+			result = name.concat(" Reservation cannot be made, too many seats requested");
+			noReservation.add(result);
+			return result;
+		}
+		Character row = closestFit(numSeats);
+		ArrayList<Integer> availableSeats = theaterLayout.get(row);
+		reservationDetails.put(name, printSeats(availableSeats, numSeats, row));
+		updateSeats(row, numSeats);
+		numSeatsAvailable -= numSeats;
+		return new String(name.concat(reservationDetails.get(name).toString()));
+	}
+
+	private void updateSeats(Character row, int numSeats) {
+		ArrayList<Integer> availableSeats = theaterLayout.get(row);
+		for (int i = 0; i < numSeats; i++)
+			availableSeats.remove(0);
+	}
+
+	private ArrayList<String> printSeats(ArrayList<Integer> availableSeats, int numSeats, Character rowId) {
+		ArrayList<String> result = new ArrayList<String>();
+		for (int i = 0; i < numSeats; i++) {
+			result.add(Character.toString(rowId) + availableSeats.get(i));
+		}
+		return result;
+	}
+
+	private Character closestFit(int numSeats) {
+		int minSize = Integer.MAX_VALUE;
+		Character row = Character.MIN_VALUE;
+		for (ConcurrentHashMap.Entry<Character, ArrayList<Integer>> entry : theaterLayout.entrySet()) {
+			if ((entry.getValue().size() - numSeats) < minSize && (entry.getValue().size() - numSeats) >= 0) {
+				minSize = entry.getValue().size() - numSeats;
+				row = entry.getKey();
+			}
+		}
+		return row;
+	}
+
+	/*
+	 * Create the output file
+	 */
+	@Override
+	public String createFile() throws IOException {
+		String content = "";
+		String newContent = "";
+		for (Map.Entry<String, ArrayList<String>> entry : reservationDetails.entrySet()) {
+			content += entry.getKey() + " " + entry.getValue() + System.lineSeparator();
+			newContent = content.replace("[", "").replace("]", "");
+		}
+		String path = createOutputFile("output.txt", newContent);
+		return path;
+	}
+
+	private String createOutputFile(String fileName, String content) throws IOException {
+		Files.write(Paths.get(fileName), content.getBytes(), StandardOpenOption.CREATE);
+		File f = new File(fileName);
+		return f.getCanonicalPath();
+	}
+
+}
